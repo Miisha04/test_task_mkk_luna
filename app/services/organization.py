@@ -8,36 +8,58 @@ from ..schemas.phone import PhoneBase
 
 async def get_organizations(
     db: AsyncSession,
-    building_id: int
+    building_id: int | None = None,
+    activity_id: int | None = None,
+    activity: str | None = None
 ) -> list[OrganizationResponse]:
-    organizations_obj = await organization_repos.get_organizations_by_building(db, building_id)
+    
+    if building_id:
+        organizations_obj = await organization_repos.get_organizations_by_building(db, building_id)
+    
+    if activity_id:
+        organizations_obj = await organization_repos.get_organizations_by_activity_id(db, activity_id)
+    
+    if activity:
+        organizations_obj = await organization_repos.get_organizations_by_activity_name(db, activity)
+
 
     organizations = [
         OrganizationResponse.model_validate(obj)
         for obj in organizations_obj
     ]
 
-    # for obj in organizations_obj:
-    #     phones_validated = [
-    #         PhoneBase.model_validate(phone)
-    #         for phone in obj.phones
-    #     ]
-
-    #     activities_validated = [
-    #         ActivityBase.model_validate(activity)
-    #         for activity in obj.activities
-    #     ]
-
-    #     org_response = OrganizationResponse.model_validate({
-    #         **obj.__dict__,
-    #         "phones": phones_validated,
-    #         "activities": activities_validated
-    #     })
-
-    #     organizations.append(org_response)
-
     return organizations
     
 
+async def get_organization(
+    db: AsyncSession,
+    name: str | None = None,
+    id: int | None = None
+) -> OrganizationResponse | None:
+    if name:
+        org_obj = await organization_repos.get_organization_by_name(db, name)
     
+    if id:
+        org_obj = await organization_repos.get_organization_by_id(db, id)
+
+    if not org_obj:
+        return None
     
+    return OrganizationResponse.model_validate(org_obj)
+
+
+async def get_organizations_by_radius(
+    db: AsyncSession,
+    radius: int,
+    lat: float,
+    lon: float
+) -> list[OrganizationResponse]:
+    
+    org_orbj = await organization_repos.get_organizations_by_radius(db, radius, lat, lon)
+
+    organizations = [
+        OrganizationResponse.model_validate(obj)
+        for obj in org_orbj
+    ]
+
+    return organizations
