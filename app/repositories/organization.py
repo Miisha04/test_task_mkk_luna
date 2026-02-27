@@ -1,7 +1,9 @@
 from sqlalchemy import select, union_all, alias
 from sqlalchemy.orm import selectinload
+from sqlalchemy import cast
+from geoalchemy2 import Geography
 from sqlalchemy.ext.asyncio import AsyncSession
-from geoalchemy2.functions import ST_DWithin, ST_MakePoint
+from geoalchemy2.functions import ST_DWithin, ST_MakePoint, ST_Within, ST_MakeEnvelope, ST_Intersects
 
 from ..models.building import Building
 from ..models.organization import Organization
@@ -139,7 +141,7 @@ async def get_organization_by_id(
     return result.scalars().one_or_none()
 
 
-async def get_organizations_by_radius(
+async def get_organizations_in_radius(
     db: AsyncSession,
     radius: int,
     lat: float,
@@ -157,6 +159,34 @@ async def get_organizations_by_radius(
                 point,
                 radius
             )
+        )
+        .options(
+            selectinload(Organization.phones),
+            selectinload(Organization.activities)
+        )
+    )
+
+    result = await db.execute(stmt)
+    return result.scalars().unique().all()
+
+
+async def get_organizations_in_square(
+    db: AsyncSession,
+    min_lat: float,
+    min_lon: float,
+    max_lat: float,
+    max_lon: float,
+):
+    envelope = cast(
+        ST_MakeEnvelope(min_lon, min_lat, max_lon, max_lat, 4326),
+        Geography
+    )
+
+    stmt = (
+        select(Organization)
+        .join(Organization.building)
+        .where(
+            ST_Intersects(Building.coords, envelope)
         )
         .options(
             selectinload(Organization.phones),

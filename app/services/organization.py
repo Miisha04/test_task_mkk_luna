@@ -48,14 +48,32 @@ async def get_organization(
     return OrganizationResponse.model_validate(org_obj)
 
 
-async def get_organizations_by_radius(
+async def get_organizations_in_radius(
     db: AsyncSession,
     radius: int,
     lat: float,
     lon: float
 ) -> list[OrganizationResponse]:
     
-    org_orbj = await organization_repos.get_organizations_by_radius(db, radius, lat, lon)
+    org_orbj = await organization_repos.get_organizations_in_radius(db, radius, lat, lon)
+
+    organizations = [
+        OrganizationResponse.model_validate(obj)
+        for obj in org_orbj
+    ]
+
+    return organizations
+
+
+async def get_organizations_in_square(
+    db: AsyncSession,
+    min_lat: float,
+    min_lon: float,
+    max_lat: float,
+    max_lon: float,
+) -> list[OrganizationResponse]:
+    
+    org_orbj = await organization_repos.get_organizations_in_square(db, min_lat, min_lon, max_lat, max_lon)
 
     organizations = [
         OrganizationResponse.model_validate(obj)
