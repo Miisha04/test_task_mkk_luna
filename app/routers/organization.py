@@ -10,7 +10,8 @@ router = APIRouter()
 @router.get(
     "/",
     response_model=list[OrganizationResponse],
-    status_code=200
+    status_code=200,
+    description="Позволяет получить список организаций по id здания, по id деятельности и названию деятельности (в рамках тестового задания не реализована совместная фильтрация, поэтому используется один параметр)"
 )
 async def get_organizations(
     building_id: int | None = Query(None, description="ID здания"),
@@ -24,7 +25,8 @@ async def get_organizations(
 @router.get(
     "/organization",
     response_model=OrganizationResponse,
-    status_code=200
+    status_code=200,
+    description="Позволяет получить организацию по ее названию или id (в рамках тестового задания не реализована совместная фильтрация, поэтому используется один параметр)"
 )
 async def get_organization(
     name: str | None = Query(None, description="Название организации"),
@@ -46,7 +48,8 @@ async def get_organization(
 @router.get(
     "/in_area",
     response_model=list[OrganizationResponse],
-    status_code=200
+    status_code=200,
+    description="Позволяет получить список организаций в радиусе"
 )
 async def get_organizations_in_area(
     radius: int = Query(..., description="Радиус в метрах"),
@@ -69,7 +72,8 @@ async def get_organizations_in_area(
 @router.get(
     "/in_square",
     response_model=list[OrganizationResponse],
-    status_code=200
+    status_code=200,
+    description="Позволяет получить список организаций в рамках заданного прямоугольника"
 )
 async def get_organizations_in_square(
     min_lat: float = Query(..., description="Мин сев широта (от)"),

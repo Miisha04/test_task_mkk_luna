@@ -3,7 +3,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy import cast
 from geoalchemy2 import Geography
 from sqlalchemy.ext.asyncio import AsyncSession
-from geoalchemy2.functions import ST_DWithin, ST_MakePoint, ST_Within, ST_MakeEnvelope, ST_Intersects
+from geoalchemy2.functions import ST_DWithin, ST_MakePoint, ST_MakeEnvelope, ST_Intersects
 
 from ..models.building import Building
 from ..models.organization import Organization
@@ -29,7 +29,7 @@ async def get_organizations_by_activity_id(
     db: AsyncSession,
     activity_id: int
 ) -> list[Organization]:
-    # рекурсивный CTE: собираем все потомки выбранной активности
+
     activity_cte = (
         select(Activity.id, Activity.parent_id)
         .where(Activity.id == activity_id)
@@ -42,12 +42,12 @@ async def get_organizations_by_activity_id(
         .where(Activity.parent_id == activity_alias.c.id)
     )
 
-    # получаем все ID активности (родитель + все потомки)
+
     activity_ids_stmt = select(activity_cte.c.id)
     result = await db.execute(activity_ids_stmt)
     all_activity_ids = [row[0] for row in result.fetchall()]
 
-    # выбираем организации с любой из этих активностей
+
     stmt = (
         select(Organization)
         .join(organization_activities)
@@ -67,15 +67,14 @@ async def get_organizations_by_activity_name(
     db: AsyncSession,
     activity_name: str
 ) -> list[Organization]:
-    # Сначала находим Activity по имени
+
     activity_obj_stmt = select(Activity).where(Activity.name == activity_name)
     result = await db.execute(activity_obj_stmt)
     activity_obj = result.scalar_one_or_none()
 
     if not activity_obj:
-        return []  # активности с таким именем нет
+        return []
 
-    # Рекурсивный CTE для поиска всех потомков выбранной активности
     activity_cte = (
         select(Activity.id, Activity.parent_id)
         .where(Activity.id == activity_obj.id)
@@ -88,12 +87,10 @@ async def get_organizations_by_activity_name(
         .where(Activity.parent_id == activity_alias.c.id)
     )
 
-    # Получаем все ID активности (родитель + потомки)
     activity_ids_stmt = select(activity_cte.c.id)
     result = await db.execute(activity_ids_stmt)
     all_activity_ids = [row[0] for row in result.fetchall()]
 
-    # Выбираем организации с любой из этих активностей
     stmt = (
         select(Organization)
         .join(organization_activities)
